@@ -28,9 +28,28 @@ async function getTasks() {
     return tasks
 }
 
-function addTask(task) {
-    return db('tasks').insert(task)
-        
+async function addTask(task) {
+    const results = await db('tasks as t').insert(task)
+    
+    let newTask = await db('tasks as t')
+        .leftJoin('projects as p', 'p.project_id', 't.project_id')
+        .select(
+                't.task_id', 
+                't.task_description', 
+                't.task_notes', 
+                't.task_completed', 
+                'p.project_name', 
+                'p.project_description'
+                )
+        .where('t.task_id', results)
+        .first()
+    
+    newTask = {
+        ...newTask,
+        task_completed: Boolean(newTask.task_completed)
+    }
+    
+    return newTask
 }
 
 module.exports = {
